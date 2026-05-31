@@ -1,1 +1,853 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Недвижимость</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --border: #2a2a2a;
+    --gold: #c9a84c;
+    --gold2: #e8c87a;
+    --text: #f0ede8;
+    --muted: #888;
+    --accent: #c9a84c;
+  }
 
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── ШАПКА ── */
+  .header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .brand-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .brand-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--text);
+  }
+
+  .brand-sub {
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── ТАБЫ ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── СТРАНИЦЫ ── */
+  .page { display: none; padding: 20px; }
+  .page.active { display: block; }
+
+  /* ── ФИЛЬТРЫ ── */
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+
+  .filter-btn {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .filter-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+    font-weight: 500;
+  }
+
+  /* ── КАРТОЧКИ ОБЪЕКТОВ ── */
+  .listings { display: flex; flex-direction: column; gap: 16px; }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    animation: fadeUp 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .card:active { transform: scale(0.98); }
+  .card:hover { border-color: var(--gold); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+    color: var(--border);
+  }
+
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+
+  .card-body { padding: 16px; }
+
+  .card-type {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .meta-tag {
+    padding: 4px 10px;
+    background: var(--bg3);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .card-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .card-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .card-btn:active { background: var(--gold); color: #000; }
+
+  /* ── ПУСТОЙ СПИСОК ── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-text { font-size: 15px; }
+
+  /* ── ЗАЯВКА ── */
+  .form-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    margin-bottom: 6px;
+  }
+  .form-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; line-height: 1.5; }
+
+  .form-group { margin-bottom: 16px; }
+
+  .form-label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--gold);
+  }
+
+  .form-select option { background: var(--bg2); }
+  .form-textarea { resize: none; height: 90px; }
+
+  .btn-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+
+  .chip {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .chip.selected {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.08);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border: none;
+    border-radius: 12px;
+    color: #000;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 0.3px;
+    transition: opacity 0.2s;
+  }
+
+  .submit-btn:active { opacity: 0.85; }
+
+  /* ── ИПОТЕКА ── */
+  .calc-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    margin-bottom: 6px;
+  }
+  .calc-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+
+  .range-wrap { position: relative; margin-top: 8px; }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 3px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    background: var(--gold);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 0 4px rgba(201,168,76,0.15);
+  }
+
+  .range-val {
+    text-align: right;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--gold);
+    margin-top: 6px;
+  }
+
+  .calc-result {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 24px;
+  }
+
+  .result-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .bank-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .bank-row:last-child { border-bottom: none; }
+
+  .bank-name { font-size: 13px; color: var(--text); }
+  .bank-rate { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .bank-payment {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    color: var(--gold);
+    text-align: right;
+  }
+  .bank-overpay { font-size: 10px; color: var(--muted); text-align: right; margin-top: 2px; }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .total-label { color: var(--muted); font-size: 12px; }
+  .total-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  /* ── МОДАЛКА ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; align-items: flex-start; padding-top: 40px; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 100%;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-img {
+    width: 100%; height: 220px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px;
+    overflow: hidden;
+  }
+  .modal-img img { width: 100%; height: 100%; object-fit: cover; }
+
+  .modal-body { padding: 20px; }
+
+  .modal-type {
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
+  }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 500; margin-bottom: 12px;
+  }
+  .modal-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px; color: var(--gold); margin-bottom: 16px;
+  }
+
+  .modal-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+  .modal-desc { color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+
+  .modal-actions { display: flex; gap: 10px; }
+
+  .btn-outline {
+    flex: 1; padding: 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .btn-gold {
+    flex: 2; padding: 13px;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border: none; border-radius: 10px;
+    color: #000;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* ── SUCCESS ── */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    animation: fadeUp 0.4s ease;
+  }
+  .success-screen.show { display: block; }
+  .success-icon { font-size: 64px; margin-bottom: 20px; }
+  .success-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px; margin-bottom: 10px;
+  }
+  .success-text { color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 24px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">🏛</div>
+    <div>
+      <div class="brand-name">Estate</div>
+      <div class="brand-sub">Premium Realty</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('catalog')">Каталог</div>
+    <div class="tab" onclick="switchTab('application')">Заявка</div>
+    <div class="tab" onclick="switchTab('mortgage')">Ипотека</div>
+  </div>
+</div>
+
+<!-- ══ КАТАЛОГ ══ -->
+<div class="page active" id="tab-catalog">
+  <div style="padding: 20px 20px 0;">
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterListings('all', this)">Все</button>
+      <button class="filter-btn" onclick="filterListings('продажа', this)">Продажа</button>
+      <button class="filter-btn" onclick="filterListings('аренда', this)">Аренда</button>
+    </div>
+  </div>
+  <div style="padding: 0 20px 20px;">
+    <div class="listings" id="listings-container"></div>
+  </div>
+</div>
+
+<!-- ══ ЗАЯВКА ══ -->
+<div class="page" id="tab-application">
+  <div id="form-wrap">
+    <div class="form-title">Подбор<br>недвижимости</div>
+    <div class="form-sub">Оставьте заявку — риелтор свяжется<br>с вами в течение 30 минут</div>
+
+    <div class="form-group">
+      <label class="form-label">Ваше имя</label>
+      <input class="form-input" id="f-name" type="text" placeholder="Иван Иванов">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Телефон</label>
+      <input class="form-input" id="f-phone" type="tel" placeholder="+7 (999) 000-00-00">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Цель</label>
+      <div class="btn-chips">
+        <button class="chip selected" onclick="selectChip(this,'deal')">🏠 Купить</button>
+        <button class="chip" onclick="selectChip(this,'deal')">🔑 Снять</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Бюджет</label>
+      <div class="btn-chips">
+        <button class="chip selected" onclick="selectChip(this,'budget')">до 3 млн</button>
+        <button class="chip" onclick="selectChip(this,'budget')">3–6 млн</button>
+        <button class="chip" onclick="selectChip(this,'budget')">6–10 млн</button>
+        <button class="chip" onclick="selectChip(this,'budget')">10+ млн</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Пожелания</label>
+      <textarea class="form-textarea" id="f-wishes" placeholder="Район, этаж, количество комнат..."></textarea>
+    </div>
+
+    <button class="submit-btn" onclick="submitForm()">Отправить заявку →</button>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Заявка принята!</div>
+    <div class="success-text">Риелтор свяжется с вами<br>в ближайшее время.<br><br>Спасибо за доверие 🙏</div>
+  </div>
+</div>
+
+<!-- ══ ИПОТЕКА ══ -->
+<div class="page" id="tab-mortgage">
+  <div class="calc-title">Калькулятор<br>ипотеки</div>
+  <div class="calc-sub">Рассчитайте платёж по ведущим банкам</div>
+
+  <div class="form-group">
+    <label class="form-label">Стоимость квартиры</label>
+    <div class="range-wrap">
+      <input type="range" id="r-price" min="1000000" max="30000000" step="100000" value="5000000" oninput="calcMortgage()">
+      <div class="range-val" id="v-price">5 000 000 ₽</div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Первоначальный взнос (<span id="dp-pct">20</span>%)</label>
+    <div class="range-wrap">
+      <input type="range" id="r-dp" min="10" max="90" step="5" value="20" oninput="calcMortgage()">
+      <div class="range-val" id="v-dp">1 000 000 ₽</div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Срок: <span id="term-val">20</span> лет</label>
+    <div class="range-wrap">
+      <input type="range" id="r-term" min="5" max="30" step="1" value="20" oninput="calcMortgage()">
+    </div>
+  </div>
+
+  <div class="calc-result" id="calc-result"></div>
+</div>
+
+<!-- ══ МОДАЛКА ОБЪЕКТА ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ── GOOGLE SHEETS ──
+const SHEET_ID = "1B5Yh6KS7INODvIu1l5tk6ZSz0HL_0JVnMbte-sB93AQ";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+let LISTINGS = [];
+
+async function loadListings() {
+  const container = document.getElementById('listings-container');
+  container.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Загружаем объекты...</div></div>`;
+
+  try {
+    const res = await fetch(SHEET_URL);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+    const rows = json.table.rows;
+
+    LISTINGS = rows
+      .filter(row => row.c && row.c[0]?.v)
+      .filter(row => String(row.c[9]?.v || '').toLowerCase() === 'да')
+      .map(row => ({
+        id:          row.c[0]?.v || 0,
+        title:       row.c[1]?.v || '',
+        deal_type:   String(row.c[2]?.v || 'продажа').toLowerCase(),
+        price:       String(row.c[3]?.v || ''),
+        rooms:       String(row.c[4]?.v || ''),
+        area:        String(row.c[5]?.v || ''),
+        district:    row.c[6]?.v || '',
+        description: row.c[7]?.v || '',
+        photos:      row.c[8]?.v ? [row.c[8].v] : [],
+        created_at:  ''
+      }));
+
+    renderListings();
+  } catch(e) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Не удалось загрузить объекты.<br>Проверьте доступ к таблице.</div></div>`;
+    console.error(e);
+  }
+}
+
+const BANKS = [
+  { name: "Сбербанк",       rate: 10.9 },
+  { name: "ВТБ",            rate: 11.2 },
+  { name: "Альфа-Банк",     rate: 11.5 },
+  { name: "Газпромбанк",    rate: 10.8 },
+  { name: "Россельхозбанк", rate: 11.3 },
+];
+
+// ── Telegram WebApp init ──
+let tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// ── ТАБЫ ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['catalog','application','mortgage'][i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── КАТАЛОГ ──
+let currentFilter = 'all';
+
+function filterListings(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderListings();
+}
+
+function renderListings() {
+  const container = document.getElementById('listings-container');
+  const filtered = currentFilter === 'all'
+    ? LISTINGS
+    : LISTINGS.filter(l => l.deal_type === currentFilter);
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🏚</div><div class="empty-text">Объектов не найдено</div></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map((l, i) => `
+    <div class="card" style="animation-delay:${i*0.08}s" onclick="openModal(${l.id})">
+      <div class="card-img">
+        ${l.photos.length ? `<img src="${l.photos[0]}" alt="">` : '🏠'}
+      </div>
+      <div class="card-body">
+        <div class="card-type">${l.deal_type === 'продажа' ? '● НА ПРОДАЖУ' : '● АРЕНДА'}</div>
+        <div class="card-title">${l.title}</div>
+        <div class="card-meta">
+          <span class="meta-tag">📍 ${l.district}</span>
+          <span class="meta-tag">🚪 ${l.rooms === 'студия' ? 'Студия' : l.rooms + ' комн.'}</span>
+          <span class="meta-tag">📐 ${l.area} м²</span>
+        </div>
+        <div class="card-footer">
+          <div class="card-price">${l.price}</div>
+          <button class="card-btn">Подробнее</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openModal(id) {
+  const l = LISTINGS.find(x => x.id === id);
+  if (!l) return;
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-img">
+      ${l.photos.length ? `<img src="${l.photos[0]}" alt="">` : '🏠'}
+    </div>
+    <div class="modal-body">
+      <div class="modal-type">${l.deal_type === 'продажа' ? '● НА ПРОДАЖУ' : '● АРЕНДА'}</div>
+      <div class="modal-title">${l.title}</div>
+      <div class="modal-price">${l.price}</div>
+      <div class="modal-tags">
+        <span class="meta-tag">📍 ${l.district}</span>
+        <span class="meta-tag">🚪 ${l.rooms === 'студия' ? 'Студия' : l.rooms + ' комн.'}</span>
+        <span class="meta-tag">📐 ${l.area} м²</span>
+      </div>
+      <div class="modal-desc">${l.description}</div>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="closeModalBtn()">Закрыть</button>
+        <button class="btn-gold" onclick="wantListing(${l.id})">Хочу посмотреть</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+function closeModalBtn() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function wantListing(id) {
+  const l = LISTINGS.find(x => x.id === id);
+  closeModalBtn();
+  if (tg) {
+    tg.sendData(JSON.stringify({ action: 'want_listing', listing_id: id, title: l.title }));
+  } else {
+    alert('Заявка на просмотр отправлена риелтору!');
+  }
+}
+
+// ── ЗАЯВКА ──
+function selectChip(el, group) {
+  el.closest('.btn-chips').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function submitForm() {
+  const name = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+
+  if (!name || !phone) {
+    if (tg) tg.showAlert('Пожалуйста, заполните имя и телефон');
+    else alert('Заполните имя и телефон');
+    return;
+  }
+
+  const deal = document.querySelector('[onclick*="deal"].selected')?.textContent.trim() || '';
+  const budget = document.querySelector('[onclick*="budget"].selected')?.textContent.trim() || '';
+  const wishes = document.getElementById('f-wishes').value.trim();
+
+  const data = { action: 'new_application', name, phone, deal, budget, wishes };
+
+  if (tg) {
+    tg.sendData(JSON.stringify(data));
+  }
+
+  document.getElementById('form-wrap').style.display = 'none';
+  document.getElementById('success-screen').classList.add('show');
+}
+
+// ── ИПОТЕКА ──
+function fmt(n) {
+  return Math.round(n).toLocaleString('ru-RU') + ' ₽';
+}
+
+function calcMonthly(loan, rate, months) {
+  const r = rate / 100 / 12;
+  return loan * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1);
+}
+
+function calcMortgage() {
+  const price = +document.getElementById('r-price').value;
+  const dpPct = +document.getElementById('r-dp').value;
+  const years = +document.getElementById('r-term').value;
+  const dp = price * dpPct / 100;
+  const loan = price - dp;
+  const months = years * 12;
+
+  document.getElementById('v-price').textContent = fmt(price);
+  document.getElementById('dp-pct').textContent = dpPct;
+  document.getElementById('v-dp').textContent = fmt(dp);
+  document.getElementById('term-val').textContent = years;
+
+  const rows = BANKS.map(b => {
+    const monthly = calcMonthly(loan, b.rate, months);
+    const overpay = monthly * months - loan;
+    return `
+      <div class="bank-row">
+        <div>
+          <div class="bank-name">${b.name}</div>
+          <div class="bank-rate">${b.rate}% годовых</div>
+        </div>
+        <div>
+          <div class="bank-payment">${fmt(monthly)}/мес</div>
+          <div class="bank-overpay">переплата ${fmt(overpay)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('calc-result').innerHTML = `
+    <div class="result-title">Расчёт по банкам</div>
+    ${rows}
+    <div class="total-row">
+      <div class="total-label">Сумма кредита</div>
+      <div class="total-val">${fmt(loan)}</div>
+    </div>
+  `;
+}
+
+// ── INIT ──
+loadListings();
+calcMortgage();
+</script>
+</body>
+</html>
